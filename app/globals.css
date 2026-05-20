@@ -22,3 +22,7 @@ body {
 * {
   box-sizing: border-box;
 }
+
+input, textarea, select {
+  color: #0f172a;
+}

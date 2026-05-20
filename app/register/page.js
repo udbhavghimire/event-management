@@ -7,7 +7,7 @@ import { useAuth } from "@/app/components/AuthProvider";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { login } = useAuth() ?? {};
+  const { refreshUser } = useAuth() ?? {};
   const [form, setForm] = useState({
     full_name: "",
     email: "",
@@ -59,10 +59,8 @@ export default function RegisterPage() {
       return;
     }
 
-    // Update client auth state
-    if (login) {
-      try { await login(form.email, form.password); } catch { /* ignore */ }
-    }
+    // Sync React auth state with the cookie already set by the register API
+    if (refreshUser) refreshUser();
 
     if (form.role === "ORGANIZER") {
       router.push("/dashboard");

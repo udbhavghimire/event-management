@@ -25,14 +25,35 @@ export async function POST(req) {
     return NextResponse.json({ error: message }, { status: loginRes.status });
   }
 
-  const { access, refresh } = await loginRes.json();
+  const loginData = await loginRes.json();
+  const { access, refresh } = loginData;
 
-  // Fetch the user's own profile using the new /api/auth/me/ endpoint
-  const meRes = await djangoFetch("/api/auth/me/", { token: access });
+  // Build userInfo from the login response if available (updated backend)
+  // or fall back to calling /api/auth/me/ (works with both old and new backend)
   let userInfo = { email };
-  if (meRes.ok) {
-    const me = await meRes.json();
-    userInfo = { id: me.id, email: me.email, name: me.full_name, role: me.role };
+
+  if (loginData.user) {
+    const u = loginData.user;
+    userInfo = {
+      id: u.id,
+      email: u.email,
+      name: u.full_name,
+      role: u.role,
+      ...(u.organisation_name ? { organisation_name: u.organisation_name } : {}),
+    };
+  } else {
+    // Fallback: fetch profile from /api/auth/me/ endpoint
+    const meRes = await djangoFetch("/api/auth/me/", { token: access });
+    if (meRes.ok) {
+      const me = await meRes.json();
+      userInfo = {
+        id: me.id,
+        email: me.email,
+        name: me.full_name,
+        role: me.role,
+        ...(me.organisation_name ? { organisation_name: me.organisation_name } : {}),
+      };
+    }
   }
 
   const res = NextResponse.json({ ok: true, user: userInfo });

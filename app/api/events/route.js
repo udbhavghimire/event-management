@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { djangoFetch, getTokenFromRequest, transformEventList } from "@/lib/djangoApi";
+import { djangoFetch, getTokenFromRequest, transformEvent, transformEventList } from "@/lib/djangoApi";
 
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
@@ -20,7 +20,7 @@ export async function GET(req) {
 
   const data = await res.json();
   const results = Array.isArray(data) ? data : data.results ?? [];
-  return NextResponse.json(results.map(transformEventList));
+  return NextResponse.json(results.map(mine ? transformEvent : transformEventList));
 }
 
 export async function POST(req) {

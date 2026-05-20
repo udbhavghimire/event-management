@@ -43,6 +43,14 @@ export default function AuthProvider({ children }) {
     return u;
   }
 
+  // Call after registration to sync React state with the already-set cookie
+  function refreshUser() {
+    const u = readUserCookie();
+    setUser(u);
+    setStatus(u ? "authenticated" : "unauthenticated");
+    return u;
+  }
+
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
     document.cookie = "user_info=; max-age=0; path=/";
@@ -52,7 +60,7 @@ export default function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, status, login, logout }}>
+    <AuthContext.Provider value={{ user, status, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

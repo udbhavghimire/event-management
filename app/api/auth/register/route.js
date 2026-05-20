@@ -30,6 +30,7 @@ export async function POST(req) {
     email: body.email,
     name: body.full_name,
     role: body.role,
+    ...(body.organisation_name ? { organisation_name: body.organisation_name } : {}),
   };
 
   const res = NextResponse.json({ ok: true });
