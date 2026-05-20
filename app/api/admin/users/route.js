@@ -2,17 +2,22 @@ import { NextResponse } from "next/server";
 import { djangoFetch, getTokenFromRequest, transformUser } from "@/lib/djangoApi";
 
 export async function GET(req) {
-  const token = getTokenFromRequest(req);
-  const { searchParams } = new URL(req.url);
-  const search = searchParams.get("search") || "";
+  try {
+    const token = getTokenFromRequest(req);
+    const { searchParams } = new URL(req.url);
+    const search = searchParams.get("search") || "";
 
-  const params = new URLSearchParams();
-  if (search) params.set("search", search);
+    const params = new URLSearchParams();
+    if (search) params.set("search", search);
 
-  const res = await djangoFetch(`/api/admin/users/?${params}`, { token });
-  if (!res.ok) return NextResponse.json([], { status: res.status });
+    const res = await djangoFetch(`/api/admin/users/?${params}`, { token });
+    if (!res.ok) return NextResponse.json([], { status: res.status });
 
-  const data = await res.json();
-  const results = Array.isArray(data) ? data : data.results ?? [];
-  return NextResponse.json(results.map(transformUser));
+    const data = await res.json();
+    const results = Array.isArray(data) ? data : data.results ?? [];
+    return NextResponse.json(results.map(transformUser));
+  } catch (err) {
+    console.error("[admin users GET] error:", err);
+    return NextResponse.json([], { status: 503 });
+  }
 }
