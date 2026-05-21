@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { djangoFetch, getTokenFromRequest, transformEvent, transformEventList } from "@/lib/djangoApi";
+import { djangoFetch, getTokenFromRequest, transformEventList } from "@/lib/djangoApi";
 
 export async function GET(req) {
   try {
@@ -21,7 +21,7 @@ export async function GET(req) {
 
     const data = await res.json();
     const results = Array.isArray(data) ? data : data.results ?? [];
-    return NextResponse.json(results.map(mine ? transformEvent : transformEventList));
+    return NextResponse.json(results.map(transformEventList));
   } catch (err) {
     console.error("[events GET] error:", err);
     return NextResponse.json([], { status: 503 });
