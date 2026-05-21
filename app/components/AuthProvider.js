@@ -8,15 +8,37 @@ export function useAuth() {
   return useContext(AuthContext);
 }
 
-function readUserCookie() {
+function readCookie(name) {
   if (typeof document === "undefined") return null;
   try {
-    const match = document.cookie.match(/(?:^|;\s*)user_info=([^;]*)/);
-    if (!match) return null;
-    return JSON.parse(decodeURIComponent(match[1]));
+    const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
+    return match ? JSON.parse(decodeURIComponent(match[1])) : null;
   } catch {
     return null;
   }
+}
+
+function readUserCookie() {
+  return readCookie("user_info");
+}
+
+// Write a persistent hint so role + name survive logout and page refreshes.
+// This cookie is NOT cleared on logout — it only stores non-sensitive profile
+// info (role, name, org) and is refreshed on every successful login.
+function writeProfileHint(u) {
+  if (typeof document === "undefined" || !u?.email) return;
+  try {
+    const hint = {
+      email: u.email,
+      role: u.role,
+      name: u.name,
+      organisation_name: u.organisation_name || "",
+    };
+    const ONE_YEAR = 365 * 24 * 60 * 60;
+    document.cookie = `profile_hint=${encodeURIComponent(JSON.stringify(hint))}; path=/; max-age=${ONE_YEAR}; samesite=lax`;
+    // Also keep localStorage in sync as a secondary fallback
+    localStorage.setItem(`profile:${u.email}`, JSON.stringify(hint));
+  } catch { /* ignore */ }
 }
 
 export default function AuthProvider({ children }) {
@@ -38,27 +60,40 @@ export default function AuthProvider({ children }) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Login failed");
 
-    // Start with what the API returned (role may be empty — backend has no /me/ endpoint)
-    let u = data.user || readUserCookie() || { email };
+    // Start with what the API returned (Django login returns tokens only, no role)
+    let u = data.user || { email };
 
-    // Merge the locally-cached profile hint (written during registration) so that
-    // role, name, and organisation_name are always available on the client.
+    // Role recovery: the backend has no /me/ endpoint, so we use locally-stored hints.
+    // Priority: profile_hint cookie (survives logout) → localStorage (written at registration)
     if (!u.role) {
+      // 1. Persistent cookie hint — written after every successful login, survives logout
+      const cookieHint = readCookie("profile_hint");
+      if (cookieHint?.email === email && cookieHint?.role) {
+        u = { ...cookieHint, ...u, role: cookieHint.role };
+      }
+    }
+    if (!u.role) {
+      // 2. localStorage fallback — written at registration time
       try {
         const stored = localStorage.getItem(`profile:${email}`);
         if (stored) {
           const hint = JSON.parse(stored);
-          u = { ...hint, ...u, role: hint.role }; // hint.role wins since API has none
+          if (hint?.email === email && hint?.role) {
+            u = { ...hint, ...u, role: hint.role };
+          }
         }
       } catch { /* ignore */ }
     }
 
-    // Patch the user_info cookie so the role survives page refreshes
+    // Patch the session cookie so the role survives page refreshes within this session
     if (u.role) {
       try {
         document.cookie = `user_info=${encodeURIComponent(JSON.stringify(u))}; path=/; max-age=${7 * 24 * 60 * 60}; samesite=lax`;
       } catch { /* ignore */ }
     }
+
+    // Always refresh the persistent hint so future logins on this browser also work
+    writeProfileHint(u);
 
     setUser(u);
     setStatus("authenticated");

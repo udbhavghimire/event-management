@@ -59,9 +59,8 @@ export default function RegisterPage() {
       return;
     }
 
-    // Persist profile hint so the login step can recover the role.
-    // The Django login endpoint only returns tokens (no user object or /me/ endpoint),
-    // so we cache the role locally and merge it in after login.
+    // Persist profile hint so future logins on this browser always recover the role.
+    // The Django login endpoint only returns tokens (no user object or /me/ endpoint).
     try {
       const hint = {
         email: form.email,
@@ -69,8 +68,12 @@ export default function RegisterPage() {
         name: form.full_name,
         organisation_name: form.organisation_name || "",
       };
+      const ONE_YEAR = 365 * 24 * 60 * 60;
+      // Cookie hint — survives logout, readable by AuthProvider on any future login
+      document.cookie = `profile_hint=${encodeURIComponent(JSON.stringify(hint))}; path=/; max-age=${ONE_YEAR}; samesite=lax`;
+      // localStorage fallback
       localStorage.setItem(`profile:${form.email}`, JSON.stringify(hint));
-    } catch { /* localStorage may be unavailable (SSR / private mode) */ }
+    } catch { /* storage may be unavailable */ }
 
     router.push("/login?registered=1");
   }
