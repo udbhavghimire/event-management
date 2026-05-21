@@ -43,14 +43,13 @@ export default function RegisterEventClient({ eventId }) {
   }, [eventId, router]);
 
   useEffect(() => {
-    if (stripePublishableKey) return;
     fetch("/api/payments/config")
       .then((r) => r.json())
       .then((data) => {
         if (data.publishableKey) setStripePublishableKey(data.publishableKey);
       })
       .catch(() => {});
-  }, [stripePublishableKey]);
+  }, []);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -77,8 +76,17 @@ export default function RegisterEventClient({ eventId }) {
         setError("Payment is required but no payment session was created.");
         return;
       }
+      if (data.clientSecret.startsWith("stub_secret")) {
+        setError(
+          "The API server is still using the stub payment gateway. On Render, set PAYMENT_GATEWAY=stripe and add your Stripe keys, then redeploy."
+        );
+        return;
+      }
       if (!stripePublishableKey) {
-        setError("Stripe is not configured. Contact the event organizer.");
+        setError(
+          "Stripe is not configured. Set PAYMENT_GATEWAY=stripe and STRIPE_PUBLISHABLE_KEY on the API server, " +
+            "or NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY on the frontend, then redeploy."
+        );
         return;
       }
       setPaymentSession({
