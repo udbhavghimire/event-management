@@ -34,6 +34,7 @@ export async function POST(req) {
         requiresPayment: true,
         registrationId: data.registration_id,
         clientSecret: data.client_secret,
+        paymentIntentId: data.payment_intent_id,
       }, { status: 201 });
     }
 

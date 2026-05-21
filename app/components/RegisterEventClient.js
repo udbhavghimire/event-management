@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "./AuthProvider";
 import Link from "next/link";
+import { Elements } from "@stripe/react-stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
+import StripePaymentForm from "./StripePaymentForm";
 
 export default function RegisterEventClient({ eventId }) {
   const [event, setEvent] = useState(null);
@@ -12,8 +15,17 @@ export default function RegisterEventClient({ eventId }) {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+  const [paymentSession, setPaymentSession] = useState(null);
+  const [stripePublishableKey, setStripePublishableKey] = useState(
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ""
+  );
   const router = useRouter();
   const { user, status } = useAuth() ?? {};
+
+  const stripePromise = useMemo(
+    () => (stripePublishableKey ? loadStripe(stripePublishableKey) : null),
+    [stripePublishableKey]
+  );
 
   useEffect(() => {
     fetch(`/api/events/${eventId}`)
@@ -30,9 +42,20 @@ export default function RegisterEventClient({ eventId }) {
       });
   }, [eventId, router]);
 
+  useEffect(() => {
+    if (stripePublishableKey) return;
+    fetch("/api/payments/config")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.publishableKey) setStripePublishableKey(data.publishableKey);
+      })
+      .catch(() => {});
+  }, [stripePublishableKey]);
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
+    setPaymentSession(null);
     setSubmitting(true);
 
     const res = await fetch("/api/registrations", {
@@ -50,17 +73,33 @@ export default function RegisterEventClient({ eventId }) {
     }
 
     if (data.requiresPayment) {
-      // Redirect to Stripe Checkout or show payment instructions
-      if (data.clientSecret) {
-        // Payment intent created — in production, render Stripe Elements here
-        setError(`Payment required. A payment session has been created (client secret: ${data.clientSecret.slice(0, 20)}...). Integrate Stripe Elements to complete payment.`);
-      } else {
-        setError("Payment is required. Please complete payment to confirm your registration.");
+      if (!data.clientSecret) {
+        setError("Payment is required but no payment session was created.");
+        return;
       }
+      if (!stripePublishableKey) {
+        setError("Stripe is not configured. Contact the event organizer.");
+        return;
+      }
+      setPaymentSession({
+        registrationId: data.registrationId,
+        clientSecret: data.clientSecret,
+        paymentIntentId: data.paymentIntentId,
+      });
       return;
     }
 
     setSuccess(true);
+  }
+
+  function handlePaymentSuccess() {
+    setPaymentSession(null);
+    setSuccess(true);
+  }
+
+  function handlePaymentCancel() {
+    setPaymentSession(null);
+    setError("Payment cancelled. Your registration is pending until payment is completed.");
   }
 
   if (loading) {
@@ -87,7 +126,6 @@ export default function RegisterEventClient({ eventId }) {
     );
   }
 
-  // Require attendee login
   if (status === "unauthenticated" || (user && user.role !== "ATTENDEE")) {
     return (
       <div className="max-w-xl mx-auto px-4 sm:px-6 py-12">
@@ -117,6 +155,46 @@ export default function RegisterEventClient({ eventId }) {
   }
 
   const selectedTier = event?.ticketTiers.find((t) => String(t.id) === tierId);
+  const amountLabel = selectedTier
+    ? selectedTier.price === 0
+      ? "Free"
+      : `A$${selectedTier.price.toFixed(2)}`
+    : "–";
+
+  if (paymentSession && stripePromise) {
+    return (
+      <div className="max-w-xl mx-auto px-4 sm:px-6 py-10">
+        <Link href={`/events/${eventId}`} className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-6">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Event details
+        </Link>
+        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+          <div className="h-2 bg-gradient-to-r from-indigo-500 to-purple-500" />
+          <div className="p-8">
+            <h1 className="text-2xl font-bold text-slate-900 mb-1">Complete payment</h1>
+            <p className="text-slate-500 mb-6">{event.title} — {amountLabel}</p>
+            <Elements
+              stripe={stripePromise}
+              options={{
+                clientSecret: paymentSession.clientSecret,
+                appearance: { theme: "stripe" },
+              }}
+            >
+              <StripePaymentForm
+                registrationId={paymentSession.registrationId}
+                paymentIntentId={paymentSession.paymentIntentId}
+                amountLabel={amountLabel}
+                onSuccess={handlePaymentSuccess}
+                onCancel={handlePaymentCancel}
+              />
+            </Elements>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-xl mx-auto px-4 sm:px-6 py-10">
@@ -188,24 +266,26 @@ export default function RegisterEventClient({ eventId }) {
             )}
 
             {selectedTier && selectedTier.price > 0 && (
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
-                <strong>Payment required:</strong> A$<strong>{selectedTier.price.toFixed(2)}</strong>. Payment confirmation is handled via the stub gateway.
+              <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 text-sm text-indigo-800">
+                <strong>Payment required:</strong> {amountLabel}. You will pay securely with Stripe on the next step.
               </div>
             )}
 
             <div className="border-t border-slate-100 pt-4">
               <div className="flex justify-between text-sm mb-4">
                 <span className="text-slate-600">Total</span>
-                <span className="font-bold text-slate-900">
-                  {selectedTier ? (selectedTier.price === 0 ? "Free" : `A$${selectedTier.price.toFixed(2)}`) : "–"}
-                </span>
+                <span className="font-bold text-slate-900">{amountLabel}</span>
               </div>
               <button
                 type="submit"
                 disabled={submitting || !tierId}
                 className="w-full bg-indigo-600 text-white py-3 rounded-xl font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {submitting ? "Processing..." : selectedTier?.price === 0 ? "Register for Free" : `Pay A$${selectedTier?.price.toFixed(2)}`}
+                {submitting
+                  ? "Processing..."
+                  : selectedTier?.price === 0
+                    ? "Register for Free"
+                    : `Continue to pay ${amountLabel}`}
               </button>
             </div>
           </form>
