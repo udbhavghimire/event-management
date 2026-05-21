@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "./AuthProvider";
 import Link from "next/link";
 
@@ -42,11 +43,21 @@ function StatCard({ icon, label, value, sub, color = "indigo" }) {
 }
 
 export default function DashboardClient() {
-  const { user } = useAuth() ?? {};
+  const { user, status } = useAuth() ?? {};
+  const router = useRouter();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
   const [toast, setToast] = useState(null);
+
+  // Guard: only organizers/admins may view the dashboard
+  useEffect(() => {
+    if (status === "loading") return;
+    const role = user?.role?.toUpperCase();
+    if (!user || (role !== "ORGANIZER" && role !== "ADMIN")) {
+      router.replace("/login");
+    }
+  }, [status, user, router]);
 
   async function fetchEvents() {
     setLoading(true);
@@ -96,6 +107,19 @@ export default function DashboardClient() {
     ? user.name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2)
     : (user?.email?.[0] || "?").toUpperCase();
 
+  // Show skeleton while auth is loading or before guard redirect fires
+  if (status === "loading" || !user) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-pulse">
+        <div className="h-36 bg-slate-200 rounded-2xl mb-8" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {[...Array(4)].map((_, i) => <div key={i} className="h-24 bg-slate-200 rounded-2xl" />)}
+        </div>
+        <div className="h-64 bg-slate-200 rounded-2xl" />
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Toast */}
@@ -107,34 +131,48 @@ export default function DashboardClient() {
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center text-white font-bold text-lg shrink-0">
-            {initials}
+      {/* Welcome banner */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-700 rounded-2xl p-6 sm:p-8 mb-8 shadow-lg shadow-indigo-200">
+        {/* decorative circles */}
+        <div className="absolute -top-6 -right-6 w-36 h-36 rounded-full bg-white/5" />
+        <div className="absolute -bottom-10 -right-2 w-52 h-52 rounded-full bg-white/5" />
+
+        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+          {/* Avatar + name */}
+          <div className="flex items-center gap-4">
+            {/* Circular avatar */}
+            <div className="w-16 h-16 rounded-full bg-white/20 ring-4 ring-white/30 flex items-center justify-center text-white font-extrabold text-xl shrink-0 backdrop-blur-sm select-none">
+              {initials}
+            </div>
+            <div>
+              <p className="text-indigo-200 text-sm font-medium">Welcome back,</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-white leading-tight">
+                {user?.name || user?.email || "Organizer"}
+              </h1>
+              {user?.organisation_name && (
+                <p className="text-indigo-200 text-sm mt-1 flex items-center gap-1.5">
+                  <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                  {user.organisation_name}
+                </p>
+              )}
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">{user?.name || user?.email}</h1>
-            {user?.organisation_name && (
-              <p className="text-sm text-indigo-600 font-medium mt-0.5 flex items-center gap-1.5">
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-                {user.organisation_name}
-              </p>
-            )}
-            <p className="text-xs text-slate-400 mt-0.5">Organizer Dashboard</p>
-          </div>
+
+          {/* Add New Event CTA */}
+          <Link
+            href="/dashboard/events/new"
+            className="inline-flex items-center gap-2.5 bg-white text-indigo-700 px-6 py-3 rounded-xl font-semibold hover:bg-indigo-50 active:bg-indigo-100 transition-colors text-sm shadow-md shrink-0 self-start sm:self-auto"
+          >
+            <span className="w-7 h-7 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+              </svg>
+            </span>
+            Add New Event
+          </Link>
         </div>
-        <Link
-          href="/dashboard/events/new"
-          className="inline-flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-indigo-700 active:bg-indigo-800 transition-colors text-sm shadow-sm shadow-indigo-200"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Add Event
-        </Link>
       </div>
 
       {/* Stats */}

@@ -37,7 +37,29 @@ export default function AuthProvider({ children }) {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Login failed");
-    const u = readUserCookie();
+
+    // Start with what the API returned (role may be empty — backend has no /me/ endpoint)
+    let u = data.user || readUserCookie() || { email };
+
+    // Merge the locally-cached profile hint (written during registration) so that
+    // role, name, and organisation_name are always available on the client.
+    if (!u.role) {
+      try {
+        const stored = localStorage.getItem(`profile:${email}`);
+        if (stored) {
+          const hint = JSON.parse(stored);
+          u = { ...hint, ...u, role: hint.role }; // hint.role wins since API has none
+        }
+      } catch { /* ignore */ }
+    }
+
+    // Patch the user_info cookie so the role survives page refreshes
+    if (u.role) {
+      try {
+        document.cookie = `user_info=${encodeURIComponent(JSON.stringify(u))}; path=/; max-age=${7 * 24 * 60 * 60}; samesite=lax`;
+      } catch { /* ignore */ }
+    }
+
     setUser(u);
     setStatus("authenticated");
     return u;
@@ -51,6 +73,7 @@ export default function AuthProvider({ children }) {
     return u;
   }
 
+  // Full logout — clears session and navigates to home
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
     document.cookie = "user_info=; max-age=0; path=/";
@@ -59,8 +82,16 @@ export default function AuthProvider({ children }) {
     window.location.href = "/";
   }
 
+  // Silent logout — clears session without any page redirect (used on login page)
+  async function silentLogout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    document.cookie = "user_info=; max-age=0; path=/";
+    setUser(null);
+    setStatus("unauthenticated");
+  }
+
   return (
-    <AuthContext.Provider value={{ user, status, login, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, status, login, logout, silentLogout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

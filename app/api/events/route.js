@@ -53,6 +53,15 @@ export async function POST(req) {
       );
     }
 
+    // Auto-publish the newly created event so it appears in the organiser's
+    // dashboard immediately. (Django's list endpoint only returns PUBLISHED events,
+    // even for mine=true.) The organiser can unpublish from the dashboard later.
+    try {
+      await djangoFetch(`/api/events/${data.id}/publish/`, { method: "POST", token });
+    } catch {
+      // Non-fatal — event is created, just not yet visible in lists
+    }
+
     return NextResponse.json({ id: data.id, ...data }, { status: 201 });
   } catch (err) {
     console.error("[events POST] error:", err);

@@ -1,13 +1,6 @@
 import { NextResponse } from "next/server";
 import { djangoFetch } from "@/lib/djangoApi";
 
-const TOKEN_OPTS = {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "lax",
-  path: "/",
-};
-
 export async function POST(req) {
   try {
     const body = await req.json();
@@ -33,26 +26,10 @@ export async function POST(req) {
       return NextResponse.json({ error: message }, { status: djangoRes.status });
     }
 
-    const { user_id, access, refresh } = await djangoRes.json();
-    const userInfo = {
-      id: user_id,
-      email: body.email,
-      name: body.full_name,
-      role: body.role,
-      ...(body.organisation_name ? { organisation_name: body.organisation_name } : {}),
-    };
-
-    const res = NextResponse.json({ ok: true });
-    res.cookies.set("access_token", access, { ...TOKEN_OPTS, maxAge: 60 * 60 });
-    res.cookies.set("refresh_token", refresh, { ...TOKEN_OPTS, maxAge: 7 * 24 * 60 * 60 });
-    res.cookies.set("user_info", encodeURIComponent(JSON.stringify(userInfo)), {
-      httpOnly: false,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 7 * 24 * 60 * 60,
-    });
-    return res;
+    // Intentionally do NOT set auth cookies here — the user must sign in
+    // explicitly after registration so the full login flow runs correctly.
+    await djangoRes.json(); // consume body
+    return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[register] unexpected error:", err);
     return NextResponse.json({ error: "Internal server error." }, { status: 500 });

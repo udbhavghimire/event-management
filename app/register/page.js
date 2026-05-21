@@ -7,7 +7,7 @@ import { useAuth } from "@/app/components/AuthProvider";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { refreshUser } = useAuth() ?? {};
+  useAuth();
   const [form, setForm] = useState({
     full_name: "",
     email: "",
@@ -59,14 +59,20 @@ export default function RegisterPage() {
       return;
     }
 
-    // Sync React auth state with the cookie already set by the register API
-    if (refreshUser) refreshUser();
+    // Persist profile hint so the login step can recover the role.
+    // The Django login endpoint only returns tokens (no user object or /me/ endpoint),
+    // so we cache the role locally and merge it in after login.
+    try {
+      const hint = {
+        email: form.email,
+        role: form.role,
+        name: form.full_name,
+        organisation_name: form.organisation_name || "",
+      };
+      localStorage.setItem(`profile:${form.email}`, JSON.stringify(hint));
+    } catch { /* localStorage may be unavailable (SSR / private mode) */ }
 
-    if (form.role === "ORGANIZER") {
-      router.push("/dashboard");
-    } else {
-      router.push("/");
-    }
+    router.push("/login?registered=1");
   }
 
   return (

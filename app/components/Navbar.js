@@ -10,8 +10,9 @@ export default function Navbar() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  const isOrganizer = user?.role === "ORGANIZER" || user?.role === "ADMIN";
-  const isAdmin = user?.role === "ADMIN";
+  const role = user?.role?.toUpperCase();
+  const isOrganizer = role === "ORGANIZER" || role === "ADMIN";
+  const isAdmin = role === "ADMIN";
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -67,9 +68,6 @@ export default function Navbar() {
                 + New Event
               </Link>
             )}
-            <Link href="/checkin" className="px-3 py-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 text-sm font-medium transition-colors">
-              Check-in
-            </Link>
           </div>
 
           {/* User area */}
@@ -156,7 +154,6 @@ export default function Navbar() {
             {isAdmin && <Link href="/admin" className="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-slate-100" onClick={() => setMenuOpen(false)}>Admin</Link>}
             {isOrganizer && <Link href="/dashboard" className="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-slate-100" onClick={() => setMenuOpen(false)}>Dashboard</Link>}
             {isOrganizer && <Link href="/dashboard/events/new" className="block px-3 py-2 text-sm font-medium text-indigo-600 rounded-lg hover:bg-indigo-50" onClick={() => setMenuOpen(false)}>+ Create Event</Link>}
-            <Link href="/checkin" className="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-slate-100" onClick={() => setMenuOpen(false)}>Check-in</Link>
             {user ? (
               <div className="pt-2 border-t border-slate-100 mt-2">
                 <div className="px-3 py-2">

@@ -1,24 +1,40 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/app/components/AuthProvider";
 import Link from "next/link";
 
-export default function LoginPage() {
+// Separated into its own component so useSearchParams is inside a Suspense boundary
+function LoginForm() {
   const router = useRouter();
-  const { login } = useAuth() ?? {};
+  const searchParams = useSearchParams();
+  const justRegistered = searchParams.get("registered") === "1";
+
+  const { login, user, status } = useAuth() ?? {};
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Redirect already-authenticated users away from the login page.
+  // Skip this when arriving from registration (?registered=1) so the
+  // success banner is visible and the user can sign in fresh.
+  useEffect(() => {
+    if (justRegistered) return;
+    if (status === "authenticated" && user) {
+      const role = user.role?.toUpperCase();
+      router.replace(role === "ORGANIZER" || role === "ADMIN" ? "/dashboard" : "/");
+    }
+  }, [justRegistered, status, user, router]);
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
     setLoading(true);
     try {
-      const user = await login(form.email, form.password);
-      if (user?.role === "ORGANIZER" || user?.role === "ADMIN") {
+      const u = await login(form.email, form.password);
+      const role = u?.role?.toUpperCase();
+      if (role === "ORGANIZER" || role === "ADMIN") {
         router.push("/dashboard");
       } else {
         router.push("/");
@@ -47,6 +63,15 @@ export default function LoginPage() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
+          {justRegistered && (
+            <div className="flex items-center gap-2.5 bg-emerald-50 text-emerald-700 px-4 py-3 rounded-lg text-sm border border-emerald-200 mb-5">
+              <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Account created! Please sign in to access your dashboard.
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
               <div className="bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm border border-red-200">{error}</div>
@@ -81,7 +106,7 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full bg-indigo-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? "Signing in..." : "Sign in"}
+              {loading ? "Signing in…" : "Sign in"}
             </button>
           </form>
 
@@ -92,5 +117,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }
