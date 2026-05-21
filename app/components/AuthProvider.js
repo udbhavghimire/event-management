@@ -33,6 +33,7 @@ function writeProfileHint(u) {
       role: u.role,
       name: u.name,
       organisation_name: u.organisation_name || "",
+      contact_phone: u.contact_phone || "",
     };
     const ONE_YEAR = 365 * 24 * 60 * 60;
     document.cookie = `profile_hint=${encodeURIComponent(JSON.stringify(hint))}; path=/; max-age=${ONE_YEAR}; samesite=lax`;

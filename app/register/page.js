@@ -15,6 +15,7 @@ export default function RegisterPage() {
     confirm: "",
     role: "ORGANIZER",
     organisation_name: "",
+    contact_phone: "",
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -43,7 +44,10 @@ export default function RegisterPage() {
       password: form.password,
       role: form.role,
     };
-    if (form.role === "ORGANIZER") payload.organisation_name = form.organisation_name;
+    if (form.role === "ORGANIZER") {
+      payload.organisation_name = form.organisation_name;
+      if (form.contact_phone.trim()) payload.contact_phone = form.contact_phone.trim();
+    }
 
     const res = await fetch("/api/auth/register", {
       method: "POST",
@@ -67,6 +71,7 @@ export default function RegisterPage() {
         role: form.role,
         name: form.full_name,
         organisation_name: form.organisation_name || "",
+        contact_phone: form.contact_phone || "",
       };
       const ONE_YEAR = 365 * 24 * 60 * 60;
       // Cookie hint — survives logout, readable by AuthProvider on any future login
@@ -140,17 +145,31 @@ export default function RegisterPage() {
             </div>
 
             {form.role === "ORGANIZER" && (
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">Organisation name</label>
-                <input
-                  type="text"
-                  required
-                  value={form.organisation_name}
-                  onChange={(e) => setForm({ ...form, organisation_name: e.target.value })}
-                  className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  placeholder="Acme Events Pty Ltd"
-                />
-              </div>
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Organisation name</label>
+                  <input
+                    type="text"
+                    required
+                    value={form.organisation_name}
+                    onChange={(e) => setForm({ ...form, organisation_name: e.target.value })}
+                    className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    placeholder="Acme Events Pty Ltd"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                    Contact phone <span className="text-slate-400 font-normal">(optional)</span>
+                  </label>
+                  <input
+                    type="tel"
+                    value={form.contact_phone}
+                    onChange={(e) => setForm({ ...form, contact_phone: e.target.value })}
+                    className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    placeholder="+61 400 000 000"
+                  />
+                </div>
+              </>
             )}
 
             <div>

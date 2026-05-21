@@ -47,9 +47,9 @@ export async function POST(req) {
         id: u.id,
         email: u.email,
         name: u.full_name,
-        // Normalize role to uppercase so client checks are consistent
         role: (u.role || "").toUpperCase(),
         ...(u.organisation_name ? { organisation_name: u.organisation_name } : {}),
+        ...(u.contact_phone ? { contact_phone: u.contact_phone } : {}),
       };
     } else {
       try {
@@ -62,6 +62,7 @@ export async function POST(req) {
             name: me.full_name,
             role: (me.role || "").toUpperCase(),
             ...(me.organisation_name ? { organisation_name: me.organisation_name } : {}),
+            ...(me.contact_phone ? { contact_phone: me.contact_phone } : {}),
           };
         }
       } catch {

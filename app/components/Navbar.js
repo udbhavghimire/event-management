@@ -38,8 +38,8 @@ export default function Navbar() {
     <nav className="bg-white border-b border-slate-200 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 shrink-0">
+          {/* Logo — organizers go to dashboard, everyone else to home */}
+          <Link href={isOrganizer ? "/dashboard" : "/"} className="flex items-center gap-2 shrink-0">
             <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
               <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -50,9 +50,12 @@ export default function Navbar() {
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-1">
-            <Link href="/" className="px-3 py-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 text-sm font-medium transition-colors">
-              Browse Events
-            </Link>
+            {/* Browse Events is only visible to attendees and guests — not organizers */}
+            {!isOrganizer && (
+              <Link href="/" className="px-3 py-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 text-sm font-medium transition-colors">
+                Browse Events
+              </Link>
+            )}
             {isAdmin && (
               <Link href="/admin" className="px-3 py-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 text-sm font-medium transition-colors">
                 Admin
@@ -150,7 +153,9 @@ export default function Navbar() {
         {/* Mobile menu */}
         {menuOpen && (
           <div className="md:hidden pb-4 pt-2 border-t border-slate-100 space-y-1">
-            <Link href="/" className="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-slate-100" onClick={() => setMenuOpen(false)}>Browse Events</Link>
+            {!isOrganizer && (
+              <Link href="/" className="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-slate-100" onClick={() => setMenuOpen(false)}>Browse Events</Link>
+            )}
             {isAdmin && <Link href="/admin" className="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-slate-100" onClick={() => setMenuOpen(false)}>Admin</Link>}
             {isOrganizer && <Link href="/dashboard" className="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-slate-100" onClick={() => setMenuOpen(false)}>Dashboard</Link>}
             {isOrganizer && <Link href="/dashboard/events/new" className="block px-3 py-2 text-sm font-medium text-indigo-600 rounded-lg hover:bg-indigo-50" onClick={() => setMenuOpen(false)}>+ Create Event</Link>}
