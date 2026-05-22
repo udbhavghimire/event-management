@@ -5,12 +5,12 @@ export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
     const search = searchParams.get("search") || "";
-    const sort = searchParams.get("sort") || "asc";
+    const sort = searchParams.get("sort") || "desc";
     const mine = searchParams.get("mine") === "true";
 
     const params = new URLSearchParams();
     if (search) params.set("search", search);
-    // asc = soonest upcoming (start_time), desc = latest uploaded first (created_at)
+    // asc = soonest upcoming (start_time), desc = newest first (created_at descending)
     if (!mine) {
       params.set("ordering", sort === "desc" ? "-created_at" : "start_time");
     }

@@ -63,7 +63,7 @@ function EventCard({ event }) {
 export default function EventsListClient() {
   const [events, setEvents] = useState([]);
   const [search, setSearch] = useState("");
-  const [sort, setSort] = useState("asc");
+  const [sort, setSort] = useState("desc");
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
 
@@ -72,7 +72,21 @@ export default function EventsListClient() {
     const params = new URLSearchParams({ sort });
     if (query) params.set("search", query);
     const res = await fetch(`/api/events?${params}`);
-    const data = await res.json();
+    let data = await res.json();
+    if (!Array.isArray(data)) data = [];
+
+    if (sort === "desc") {
+      data = [...data].sort((a, b) => {
+        const aTime = new Date(a.createdAt || a.startTime).getTime();
+        const bTime = new Date(b.createdAt || b.startTime).getTime();
+        return bTime - aTime;
+      });
+    } else {
+      data = [...data].sort((a, b) =>
+        new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+      );
+    }
+
     setEvents(data);
     setLoading(false);
   }, [sort, query]);
