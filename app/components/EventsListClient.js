@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import HeroCarousel from "./HeroCarousel";
 
 function EventCard({ event }) {
   const start = new Date(event.startTime);
@@ -101,41 +102,49 @@ export default function EventsListClient() {
   return (
     <>
       {/* Hero */}
-      <div className="bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-700 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
-          <div className="max-w-2xl">
-            <span className="inline-flex items-center gap-1.5 text-indigo-200 text-sm font-medium mb-4">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              Live events from EventEase
-            </span>
-            <h1 className="text-4xl sm:text-5xl font-extrabold leading-tight mb-4">
-              Discover &amp; Join<br className="hidden sm:block" /> Amazing Events
-            </h1>
-            <p className="text-indigo-200 text-lg mb-8">
-              Browse upcoming events, grab your tickets, and make memories that last.
-            </p>
+      <div className="relative bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-700 text-white overflow-hidden">
+        <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-white/5 pointer-events-none" />
+        <div className="absolute -bottom-32 -left-16 w-80 h-80 rounded-full bg-purple-500/20 pointer-events-none" />
 
-            {/* Inline search in hero */}
-            <form onSubmit={handleSearch} className="flex gap-2">
-              <div className="relative flex-1">
-                <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search by title, venue, or description…"
-                  className="w-full pl-10 pr-4 py-3 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-white/60 bg-white"
-                />
-              </div>
-              <button
-                type="submit"
-                className="bg-white text-indigo-700 px-5 py-3 rounded-xl text-sm font-semibold hover:bg-indigo-50 transition-colors whitespace-nowrap"
-              >
-                Search
-              </button>
-            </form>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
+          <div className="grid lg:grid-cols-2 gap-10 lg:gap-12 items-center">
+            <div className="relative z-10">
+              <span className="inline-flex items-center gap-1.5 text-indigo-200 text-sm font-medium mb-4">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Live events from EventEase
+              </span>
+              <h1 className="text-4xl sm:text-5xl font-extrabold leading-tight mb-4">
+                Discover &amp; Join<br className="hidden sm:block" /> Amazing Events
+              </h1>
+              <p className="text-indigo-200 text-lg mb-8">
+                Browse upcoming events, grab your tickets, and make memories that last.
+              </p>
+
+              <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2">
+                <div className="relative flex-1">
+                  <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search by title, venue, or description…"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-white/60 bg-white"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="bg-white text-indigo-700 px-5 py-3 rounded-xl text-sm font-semibold hover:bg-indigo-50 transition-colors whitespace-nowrap"
+                >
+                  Search
+                </button>
+              </form>
+            </div>
+
+            <div className="relative z-10 w-full max-w-xl mx-auto lg:max-w-none lg:ml-auto">
+              <HeroCarousel />
+            </div>
           </div>
         </div>
       </div>
