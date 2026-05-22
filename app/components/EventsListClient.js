@@ -157,7 +157,7 @@ export default function EventsListClient() {
             className="px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-slate-800 font-medium shadow-sm"
           >
             <option value="asc">Soonest first</option>
-            <option value="desc">Newest first</option>
+            <option value="desc">Latest first</option>
           </select>
         </div>
 

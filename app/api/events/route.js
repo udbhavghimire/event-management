@@ -10,9 +10,9 @@ export async function GET(req) {
 
     const params = new URLSearchParams();
     if (search) params.set("search", search);
-    // asc = soonest upcoming (start_time), desc = newest listings first (id)
+    // asc = soonest upcoming (start_time), desc = latest uploaded first (created_at)
     if (!mine) {
-      params.set("ordering", sort === "desc" ? "-id" : "start_time");
+      params.set("ordering", sort === "desc" ? "-created_at" : "start_time");
     }
     if (mine) params.set("mine", "true");
 
