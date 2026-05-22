@@ -10,7 +10,10 @@ export async function GET(req) {
 
     const params = new URLSearchParams();
     if (search) params.set("search", search);
-    if (!mine) params.set("ordering", sort === "desc" ? "-start_time" : "start_time");
+    // asc = soonest upcoming (start_time), desc = newest listings first (id)
+    if (!mine) {
+      params.set("ordering", sort === "desc" ? "-id" : "start_time");
+    }
     if (mine) params.set("mine", "true");
 
     const res = await djangoFetch(`/api/events/?${params}`, {

@@ -46,9 +46,14 @@ function EventCard({ event }) {
           </div>
         </div>
 
-        <div className="mt-4 flex items-center justify-between">
-          <span className="text-xs text-slate-400">By {event.organizer.name}</span>
-          <span className="text-xs text-slate-400">{event._count.registrations} registered</span>
+        <div className="mt-4 flex items-center justify-between gap-2">
+          <span className="text-xs text-slate-500 truncate">By {event.organizer.name || "Organizer"}</span>
+          <span className="text-xs text-slate-600 font-medium shrink-0">
+            {event._count.registrations} registered
+            {event.ticketTiers[0]?.remaining != null && (
+              <span className="text-slate-400 font-normal"> · {event.ticketTiers[0].remaining} left</span>
+            )}
+          </span>
         </div>
       </div>
     </Link>
@@ -124,20 +129,21 @@ export default function EventsListClient() {
       {/* Events section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         {/* Toolbar */}
-        <div className="flex items-center justify-between gap-4 mb-6">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <div className="flex flex-wrap items-center gap-2 bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-sm">
             <h2 className="text-xl font-bold text-slate-900">
               {query ? `Results for "${query}"` : "Upcoming Events"}
             </h2>
             {!loading && (
-              <span className="text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-500 font-medium">
+              <span className="text-xs px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-700 font-semibold">
                 {events.length}
               </span>
             )}
             {query && (
               <button
+                type="button"
                 onClick={() => { setQuery(""); setSearch(""); }}
-                className="text-xs text-indigo-600 hover:underline ml-1"
+                className="text-xs text-indigo-600 hover:underline font-medium"
               >
                 Clear
               </button>
@@ -147,10 +153,11 @@ export default function EventsListClient() {
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value)}
-            className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-slate-700"
+            aria-label="Sort events"
+            className="px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-slate-800 font-medium shadow-sm"
           >
             <option value="asc">Soonest first</option>
-            <option value="desc">Latest first</option>
+            <option value="desc">Newest first</option>
           </select>
         </div>
 
