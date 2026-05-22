@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import EventImageFallback from "./EventImageFallback";
 import HeroCarousel from "./HeroCarousel";
 
 function EventCard({ event }) {
@@ -26,12 +27,7 @@ function EventCard({ event }) {
           />
         </div>
       ) : (
-        <div
-          className="h-40 bg-gradient-to-br from-indigo-50 via-purple-50 to-indigo-100 flex items-center justify-center"
-          aria-hidden
-        >
-          <span className="text-7xl leading-none select-none">🎉</span>
-        </div>
+        <EventImageFallback size="card" />
       )}
       <div className="p-6">
         <div className="flex items-start justify-between gap-3 mb-3">

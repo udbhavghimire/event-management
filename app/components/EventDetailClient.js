@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import EventImageFallback from "./EventImageFallback";
 
 export default function EventDetailClient({ eventId }) {
   const [event, setEvent] = useState(null);
@@ -64,7 +65,7 @@ export default function EventDetailClient({ eventId }) {
             />
           </div>
         ) : (
-          <div className="h-2 bg-gradient-to-r from-indigo-500 to-purple-500" />
+          <EventImageFallback size="detail" />
         )}
         <div className="p-8">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
