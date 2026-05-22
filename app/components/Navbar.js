@@ -12,6 +12,7 @@ export default function Navbar() {
 
   const role = user?.role?.toUpperCase();
   const isOrganizer = role === "ORGANIZER" || role === "ADMIN";
+  const isAttendee = role === "ATTENDEE";
   const isAdmin = role === "ADMIN";
 
   useEffect(() => {
@@ -54,6 +55,11 @@ export default function Navbar() {
             {!isOrganizer && (
               <Link href="/" className="px-3 py-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 text-sm font-medium transition-colors">
                 Browse Events
+              </Link>
+            )}
+            {isAttendee && (
+              <Link href="/my-events" className="px-3 py-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 text-sm font-medium transition-colors">
+                My Events
               </Link>
             )}
             {isAdmin && (
@@ -106,6 +112,12 @@ export default function Navbar() {
                       <p className="text-sm font-semibold text-slate-900 truncate">{user.name || user.email}</p>
                       <p className="text-xs text-slate-400 truncate">{user.email}</p>
                     </div>
+                    {isAttendee && (
+                      <Link href="/my-events" onClick={() => setDropdownOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
+                        <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                        My Events
+                      </Link>
+                    )}
                     {isOrganizer && (
                       <>
                         <Link href="/dashboard" onClick={() => setDropdownOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
@@ -155,6 +167,9 @@ export default function Navbar() {
           <div className="md:hidden pb-4 pt-2 border-t border-slate-100 space-y-1">
             {!isOrganizer && (
               <Link href="/" className="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-slate-100" onClick={() => setMenuOpen(false)}>Browse Events</Link>
+            )}
+            {isAttendee && (
+              <Link href="/my-events" className="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-slate-100" onClick={() => setMenuOpen(false)}>My Events</Link>
             )}
             {isAdmin && <Link href="/admin" className="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-slate-100" onClick={() => setMenuOpen(false)}>Admin</Link>}
             {isOrganizer && <Link href="/dashboard" className="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-slate-100" onClick={() => setMenuOpen(false)}>Dashboard</Link>}

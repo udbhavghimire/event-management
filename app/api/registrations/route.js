@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { djangoFetch, getTokenFromRequest } from "@/lib/djangoApi";
+import { djangoFetch, getTokenFromRequest, transformMyRegistration } from "@/lib/djangoApi";
 
 export async function GET(req) {
   try {
@@ -7,7 +7,7 @@ export async function GET(req) {
     const res = await djangoFetch("/api/me/registrations/", { token });
     if (!res.ok) return NextResponse.json([], { status: res.status });
     const data = await res.json();
-    return NextResponse.json(data);
+    return NextResponse.json((data || []).map(transformMyRegistration));
   } catch (err) {
     console.error("[registrations GET] error:", err);
     return NextResponse.json([], { status: 503 });
