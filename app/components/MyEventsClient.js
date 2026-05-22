@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "./AuthProvider";
 
@@ -10,6 +10,13 @@ const STATUS_COLORS = {
   CANCELLED: "bg-red-100 text-red-700",
   REFUNDED: "bg-slate-100 text-slate-600",
 };
+
+const FILTERS = [
+  { id: "ALL", label: "All" },
+  { id: "CONFIRMED", label: "Confirmed" },
+  { id: "PENDING", label: "Pending" },
+  { id: "CANCELLED", label: "Cancelled" },
+];
 
 function formatDate(iso) {
   if (!iso) return "—";
@@ -34,6 +41,22 @@ export default function MyEventsClient() {
   const [reason, setReason] = useState("");
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+
+  const filteredRegistrations = useMemo(() => {
+    if (statusFilter === "ALL") return registrations;
+    return registrations.filter((reg) => reg.status === statusFilter);
+  }, [registrations, statusFilter]);
+
+  const filterCounts = useMemo(() => {
+    const counts = { ALL: registrations.length };
+    for (const { id } of FILTERS) {
+      if (id !== "ALL") {
+        counts[id] = registrations.filter((r) => r.status === id).length;
+      }
+    }
+    return counts;
+  }, [registrations]);
 
   async function fetchRegistrations() {
     setLoading(true);
@@ -96,6 +119,12 @@ export default function MyEventsClient() {
   if (authStatus === "unauthenticated") {
     return (
       <div className="max-w-md mx-auto px-4 py-16 text-center">
+        <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-8">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Browse Events
+        </Link>
         <h2 className="text-xl font-bold text-slate-900 mb-2">Sign in to view your events</h2>
         <p className="text-slate-500 mb-6">Your registered events appear here after you sign in.</p>
         <Link href="/login" className="inline-block px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700">
@@ -108,6 +137,12 @@ export default function MyEventsClient() {
   if (user?.role !== "ATTENDEE") {
     return (
       <div className="max-w-md mx-auto px-4 py-16 text-center">
+        <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-8">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Browse Events
+        </Link>
         <h2 className="text-xl font-bold text-slate-900 mb-2">Attendee account required</h2>
         <p className="text-slate-500">My Events is available for attendee accounts.</p>
       </div>
@@ -116,10 +151,47 @@ export default function MyEventsClient() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10">
-      <div className="mb-8">
+      <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-6">
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        </svg>
+        Browse Events
+      </Link>
+
+      <div className="mb-6">
         <h1 className="text-2xl font-bold text-slate-900">My Events</h1>
         <p className="text-slate-500 mt-1">Events you have registered for</p>
       </div>
+
+      {registrations.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-6">
+          {FILTERS.map(({ id, label }) => {
+            const active = statusFilter === id;
+            const count = filterCounts[id] ?? 0;
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setStatusFilter(id)}
+                className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium transition-colors ${
+                  active
+                    ? "bg-indigo-600 text-white shadow-sm"
+                    : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300"
+                }`}
+              >
+                {label}
+                <span
+                  className={`text-xs px-1.5 py-0.5 rounded-full ${
+                    active ? "bg-indigo-500 text-white" : "bg-slate-100 text-slate-500"
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {registrations.length === 0 ? (
         <div className="bg-white rounded-2xl border border-slate-200 p-16 text-center">
@@ -131,9 +203,22 @@ export default function MyEventsClient() {
             Browse events
           </Link>
         </div>
+      ) : filteredRegistrations.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
+          <p className="text-slate-500 mb-4">
+            No {statusFilter === "ALL" ? "" : statusFilter.toLowerCase()} registrations found.
+          </p>
+          <button
+            type="button"
+            onClick={() => setStatusFilter("ALL")}
+            className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+          >
+            Show all events
+          </button>
+        </div>
       ) : (
         <div className="space-y-4">
-          {registrations.map((reg) => (
+          {filteredRegistrations.map((reg) => (
             <article
               key={reg.id}
               className="bg-white rounded-2xl border border-slate-200 p-6 hover:border-indigo-200 transition-colors"
