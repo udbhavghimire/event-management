@@ -28,7 +28,6 @@ export default function AttendeesClient({ eventId }) {
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refundModal, setRefundModal] = useState(null);
-  const [refundReason, setRefundReason] = useState("");
   const [refunding, setRefunding] = useState(false);
 
   async function fetchData() {
@@ -92,7 +91,9 @@ export default function AttendeesClient({ eventId }) {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Attendees</h1>
-          <p className="text-slate-500 mt-0.5">{event?.title} &bull; {attendees.length} registered</p>
+          <p className="text-slate-500 mt-0.5">
+            {event?.title} &bull; {attendees.filter((a) => isRegistered(a.status)).length} registered
+          </p>
         </div>
         <button
           onClick={downloadCsv}
@@ -136,7 +137,7 @@ export default function AttendeesClient({ eventId }) {
                     </td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[a.status] || "bg-slate-100 text-slate-600"}`}>
-                        {a.status}
+                        {STATUS_LABELS[a.status] || a.status}
                       </span>
                     </td>
                     <td className="px-4 py-3">
@@ -157,13 +158,23 @@ export default function AttendeesClient({ eventId }) {
                       )}
                     </td>
                     <td className="px-6 py-3 text-right">
-                      {a.status === "CONFIRMED" && (
-                        <button
-                          onClick={() => setRefundModal(a)}
-                          className="text-xs px-2.5 py-1.5 rounded-lg bg-red-100 hover:bg-red-200 text-red-700 font-medium transition-colors"
-                        >
-                          Refund
-                        </button>
+                      {a.status === "REFUND_PENDING" && (
+                        <div className="flex justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setRefundModal({ ...a, action: "approve" })}
+                            className="text-xs px-2.5 py-1.5 rounded-lg bg-green-100 hover:bg-green-200 text-green-800 font-medium transition-colors"
+                          >
+                            Approve
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setRefundModal({ ...a, action: "reject" })}
+                            className="text-xs px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition-colors"
+                          >
+                            Reject
+                          </button>
+                        </div>
                       )}
                     </td>
                   </tr>
@@ -177,28 +188,35 @@ export default function AttendeesClient({ eventId }) {
       {refundModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
-            <h3 className="font-bold text-slate-900 mb-1">Process Refund</h3>
+            <h3 className="font-bold text-slate-900 mb-1">
+              {refundModal.action === "approve" ? "Approve refund" : "Reject refund request"}
+            </h3>
             <p className="text-sm text-slate-500 mb-4">{refundModal.attendeeName}</p>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Reason for refund</label>
-              <textarea
-                value={refundReason}
-                onChange={(e) => setRefundReason(e.target.value)}
-                rows={3}
-                className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
-                placeholder="Provide a reason for this refund..."
-              />
-            </div>
+            <p className="text-sm text-slate-600 mb-4">
+              {refundModal.action === "approve"
+                ? "This will process the payment refund and remove this attendee from the registered count."
+                : "The attendee will remain confirmed and their refund request will be declined."}
+            </p>
             <div className="flex gap-3">
               <button
-                onClick={processRefund}
-                disabled={refunding || !refundReason.trim()}
-                className="flex-1 bg-red-600 text-white py-2 rounded-xl text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition-colors"
+                type="button"
+                onClick={refundModal.action === "approve" ? processApprove : processReject}
+                disabled={refunding}
+                className={`flex-1 text-white py-2 rounded-xl text-sm font-medium disabled:opacity-50 transition-colors ${
+                  refundModal.action === "approve"
+                    ? "bg-green-600 hover:bg-green-700"
+                    : "bg-red-600 hover:bg-red-700"
+                }`}
               >
-                {refunding ? "Processing..." : "Confirm Refund"}
+                {refunding
+                  ? "Processing..."
+                  : refundModal.action === "approve"
+                    ? "Approve refund"
+                    : "Reject request"}
               </button>
               <button
-                onClick={() => { setRefundModal(null); setRefundReason(""); }}
+                type="button"
+                onClick={() => setRefundModal(null)}
                 className="flex-1 border border-slate-300 text-slate-700 py-2 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors"
               >
                 Cancel
