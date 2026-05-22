@@ -192,6 +192,7 @@ export default function RegisterEventClient({ eventId }) {
             >
               <StripePaymentForm
                 registrationId={paymentSession.registrationId}
+                clientSecret={paymentSession.clientSecret}
                 paymentIntentId={paymentSession.paymentIntentId}
                 amountLabel={amountLabel}
                 onSuccess={handlePaymentSuccess}

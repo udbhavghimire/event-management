@@ -1,10 +1,52 @@
 "use client";
 
 import { useState } from "react";
-import { PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
+import {
+  CardCvcElement,
+  CardExpiryElement,
+  CardNumberElement,
+  useElements,
+  useStripe,
+} from "@stripe/react-stripe-js";
+
+const ELEMENT_STYLE = {
+  base: {
+    fontSize: "16px",
+    color: "#0f172a",
+    "::placeholder": { color: "#94a3b8" },
+  },
+  invalid: { color: "#dc2626" },
+};
+
+const CARD_NUMBER_OPTIONS = {
+  style: ELEMENT_STYLE,
+  placeholder: "4242 4242 4242 4242",
+};
+
+const CARD_EXPIRY_OPTIONS = {
+  style: ELEMENT_STYLE,
+  placeholder: "MM / YY",
+};
+
+const CARD_CVC_OPTIONS = {
+  style: ELEMENT_STYLE,
+  placeholder: "CVC",
+};
+
+function StripeField({ label, children }) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-slate-700 mb-1.5">{label}</label>
+      <div className="px-3.5 py-3 border border-slate-300 rounded-lg bg-white focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-transparent">
+        {children}
+      </div>
+    </div>
+  );
+}
 
 export default function StripePaymentForm({
   registrationId,
+  clientSecret,
   paymentIntentId,
   amountLabel,
   onSuccess,
@@ -17,15 +59,21 @@ export default function StripePaymentForm({
 
   async function handlePay(e) {
     e.preventDefault();
-    if (!stripe || !elements) return;
+    if (!stripe || !elements || !clientSecret) return;
+
+    const cardNumber = elements.getElement(CardNumberElement);
+    if (!cardNumber) {
+      setError("Card form is not ready. Please refresh and try again.");
+      return;
+    }
 
     setError("");
     setPaying(true);
 
-    const { error: stripeError, paymentIntent } = await stripe.confirmPayment({
-      elements,
-      redirect: "if_required",
-    });
+    const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(
+      clientSecret,
+      { payment_method: { card: cardNumber } }
+    );
 
     if (stripeError) {
       setPaying(false);
@@ -57,7 +105,19 @@ export default function StripePaymentForm({
           {error}
         </div>
       )}
-      <PaymentElement />
+      <div className="space-y-4">
+        <StripeField label="Card number">
+          <CardNumberElement options={CARD_NUMBER_OPTIONS} />
+        </StripeField>
+        <div className="grid grid-cols-2 gap-4">
+          <StripeField label="Expiry">
+            <CardExpiryElement options={CARD_EXPIRY_OPTIONS} />
+          </StripeField>
+          <StripeField label="CVC">
+            <CardCvcElement options={CARD_CVC_OPTIONS} />
+          </StripeField>
+        </div>
+      </div>
       <div className="flex flex-col sm:flex-row gap-3 pt-2">
         <button
           type="submit"
