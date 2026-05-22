@@ -5,27 +5,20 @@ export async function POST(req, { params }) {
   try {
     const { id } = await params;
     const token = getTokenFromRequest(req);
-    const body = await req.json().catch(() => ({}));
-    const res = await djangoFetch(`/api/registrations/${id}/refund/`, {
+    const res = await djangoFetch(`/api/registrations/${id}/refund/reject/`, {
       method: "POST",
       token,
-      body: { reason: body.reason || "" },
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       return NextResponse.json(
-        { error: data?.detail || "Refund request failed." },
+        { error: data?.detail || "Could not reject refund." },
         { status: res.status }
       );
     }
-    return NextResponse.json({
-      ok: true,
-      detail: data?.detail,
-      registration: data?.registration,
-      refund: data?.refund,
-    }, { status: res.status });
+    return NextResponse.json({ ok: true, ...data });
   } catch (err) {
-    console.error("[registrations refund POST] error:", err);
+    console.error("[refund reject POST] error:", err);
     return NextResponse.json({ error: "Internal server error." }, { status: 500 });
   }
 }

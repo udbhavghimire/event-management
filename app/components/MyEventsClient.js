@@ -8,15 +8,31 @@ const STATUS_COLORS = {
   CONFIRMED: "bg-green-100 text-green-700",
   PENDING: "bg-amber-100 text-amber-700",
   CANCELLED: "bg-red-100 text-red-700",
+  REFUND_PENDING: "bg-orange-100 text-orange-800",
   REFUNDED: "bg-slate-100 text-slate-600",
+};
+
+const STATUS_LABELS = {
+  CONFIRMED: "Confirmed",
+  PENDING: "Pending",
+  CANCELLED: "Cancelled",
+  REFUND_PENDING: "Pending Refund",
+  REFUNDED: "Refunded",
 };
 
 const FILTERS = [
   { id: "ALL", label: "All" },
   { id: "CONFIRMED", label: "Confirmed" },
   { id: "PENDING", label: "Pending" },
+  { id: "REFUND_PENDING", label: "Pending Refund" },
+  { id: "REFUNDED", label: "Refunded" },
   { id: "CANCELLED", label: "Cancelled" },
 ];
+
+const FILTER_EMPTY_LABELS = {
+  REFUND_PENDING: "pending refund",
+  REFUNDED: "refunded",
+};
 
 function formatDate(iso) {
   if (!iso) return "—";
@@ -206,7 +222,7 @@ export default function MyEventsClient() {
       ) : filteredRegistrations.length === 0 ? (
         <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
           <p className="text-slate-500 mb-4">
-            No {statusFilter === "ALL" ? "" : statusFilter.toLowerCase()} registrations found.
+            No {statusFilter === "ALL" ? "" : FILTER_EMPTY_LABELS[statusFilter] || statusFilter.toLowerCase()} registrations found.
           </p>
           <button
             type="button"
@@ -237,7 +253,7 @@ export default function MyEventsClient() {
                         STATUS_COLORS[reg.status] || "bg-slate-100 text-slate-600"
                       }`}
                     >
-                      {reg.status}
+                      {STATUS_LABELS[reg.status] || reg.status}
                     </span>
                   </div>
                   <p className="text-sm text-slate-600">
@@ -302,18 +318,23 @@ export default function MyEventsClient() {
             <p className="text-sm text-slate-500 mb-4">{actionModal.registration.event.title}</p>
 
             {actionModal.type === "refund" && (
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                  Reason for refund
-                </label>
-                <textarea
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                  rows={3}
-                  className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
-                  placeholder="Tell us why you need a refund..."
-                />
-              </div>
+              <>
+                <p className="text-sm text-slate-600 mb-3">
+                  Your request will be sent to the organizer for approval. You will not be refunded until it is approved.
+                </p>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                    Reason for refund
+                  </label>
+                  <textarea
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    rows={3}
+                    className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                    placeholder="Tell us why you need a refund..."
+                  />
+                </div>
+              </>
             )}
 
             {actionModal.type === "cancel" && (

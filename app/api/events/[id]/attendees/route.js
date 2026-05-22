@@ -33,14 +33,15 @@ export async function GET(req, { params }) {
 
     const rows = lines.slice(1).map((line) => {
       const vals = line.split(",");
+      const hasStatusCol = vals.length >= 7;
       return {
         id: vals[0],
         attendeeName: vals[1],
         attendeeEmail: vals[2],
         ticketTier: { name: vals[3], price: 0 },
         registeredAt: vals[4],
-        checkedIn: vals[5]?.trim() === "yes",
-        status: "CONFIRMED",
+        status: hasStatusCol ? vals[5]?.trim() : "CONFIRMED",
+        checkedIn: hasStatusCol ? vals[6]?.trim() === "yes" : vals[5]?.trim() === "yes",
       };
     });
 
