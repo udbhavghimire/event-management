@@ -64,7 +64,7 @@ function EventCard({ event }) {
 export default function EventsListClient() {
   const [events, setEvents] = useState([]);
   const [search, setSearch] = useState("");
-  const [sort, setSort] = useState("desc");
+  const [sort, setSort] = useState("asc");
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
 

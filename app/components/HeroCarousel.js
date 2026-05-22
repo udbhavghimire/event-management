@@ -21,8 +21,8 @@ const SLIDES = [
     alt: "Outdoor festival with colorful lights",
   },
   {
-    src: "https://images.unsplash.com/photo-1571266028247-e4732b0e2570?w=1200&q=80&auto=format&fit=crop",
-    alt: "DJ performing at a party event",
+    src: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=1200&q=80&auto=format&fit=crop",
+    alt: "Live concert crowd with stage lights at a party",
   },
 ];
 

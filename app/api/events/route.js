@@ -5,7 +5,7 @@ export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
     const search = searchParams.get("search") || "";
-    const sort = searchParams.get("sort") || "desc";
+    const sort = searchParams.get("sort") || "asc";
     const mine = searchParams.get("mine") === "true";
 
     const params = new URLSearchParams();
