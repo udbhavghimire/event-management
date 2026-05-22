@@ -26,7 +26,12 @@ function EventCard({ event }) {
           />
         </div>
       ) : (
-        <div className="h-3 bg-gradient-to-r from-indigo-500 to-purple-500" />
+        <div
+          className="h-40 bg-gradient-to-br from-indigo-50 via-purple-50 to-indigo-100 flex items-center justify-center"
+          aria-hidden
+        >
+          <span className="text-7xl leading-none select-none">🎉</span>
+        </div>
       )}
       <div className="p-6">
         <div className="flex items-start justify-between gap-3 mb-3">
