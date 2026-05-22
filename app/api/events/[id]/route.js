@@ -1,5 +1,38 @@
 import { NextResponse } from "next/server";
-import { djangoFetch, getTokenFromRequest, transformEvent } from "@/lib/djangoApi";
+import {
+  djangoFetch,
+  djangoFetchMultipart,
+  getTokenFromRequest,
+  transformEvent,
+} from "@/lib/djangoApi";
+
+function appendEventFields(djangoForm, body) {
+  if (body.title !== undefined) djangoForm.append("title", String(body.title));
+  if (body.description !== undefined) djangoForm.append("description", String(body.description));
+  if (body.venue !== undefined) djangoForm.append("venue", String(body.venue));
+  if (body.capacity !== undefined) djangoForm.append("capacity", String(body.capacity));
+  if (body.startTime !== undefined) djangoForm.append("start_time", String(body.startTime));
+  if (body.endTime !== undefined) djangoForm.append("end_time", String(body.endTime));
+}
+
+async function buildDjangoFormFromRequest(req) {
+  const form = await req.formData();
+  const djangoForm = new FormData();
+  const body = {
+    title: form.get("title"),
+    description: form.get("description"),
+    venue: form.get("venue"),
+    capacity: form.get("capacity"),
+    startTime: form.get("startTime"),
+    endTime: form.get("endTime"),
+  };
+  appendEventFields(djangoForm, body);
+  const image = form.get("image");
+  if (image && typeof image !== "string" && image.size > 0) {
+    djangoForm.append("image", image);
+  }
+  return djangoForm;
+}
 
 export async function GET(req, { params }) {
   try {
@@ -19,6 +52,26 @@ export async function PUT(req, { params }) {
   try {
     const { id } = await params;
     const token = getTokenFromRequest(req);
+    const contentType = req.headers.get("content-type") || "";
+
+    if (contentType.includes("multipart/form-data")) {
+      const djangoForm = await buildDjangoFormFromRequest(req);
+      const res = await djangoFetchMultipart(`/api/events/${id}/`, {
+        method: "PATCH",
+        formData: djangoForm,
+        token,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        const msg = Object.values(data)?.[0];
+        return NextResponse.json(
+          { error: Array.isArray(msg) ? msg[0] : data?.detail || "Update failed." },
+          { status: res.status }
+        );
+      }
+      return NextResponse.json(transformEvent(data));
+    }
+
     const body = await req.json();
 
     if ("published" in body || "status" in body) {

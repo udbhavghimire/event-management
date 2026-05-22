@@ -249,6 +249,17 @@ export default function DashboardClient() {
               return (
                 <div key={event.id} className="px-6 py-5 hover:bg-slate-50 transition-colors">
                   <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+                    {event.imageUrl && (
+                      <div className="w-full lg:w-24 h-24 rounded-xl overflow-hidden bg-slate-100 shrink-0">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={event.imageUrl}
+                          alt=""
+                          loading="lazy"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
                     {/* Event info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">

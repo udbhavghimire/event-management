@@ -1,7 +1,7 @@
 import MyEventsClient from "@/app/components/MyEventsClient";
 
 export const metadata = {
-  title: "My Events — EventEase",
+  title: "My Events — EzEvent",
 };
 
 export default function MyEventsPage() {

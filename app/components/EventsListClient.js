@@ -10,9 +10,24 @@ function EventCard({ event }) {
     ? Math.min(...event.ticketTiers.map((t) => t.price))
     : null;
 
+  const cardImage = event.imageUrl;
+
   return (
     <Link href={`/events/${event.id}`} className="group block bg-white rounded-2xl border border-slate-200 hover:border-indigo-300 hover:shadow-md transition-all overflow-hidden">
-      <div className="h-3 bg-gradient-to-r from-indigo-500 to-purple-500" />
+      {cardImage ? (
+        <div className="relative h-40 bg-slate-100 overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={cardImage}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
+          />
+        </div>
+      ) : (
+        <div className="h-3 bg-gradient-to-r from-indigo-500 to-purple-500" />
+      )}
       <div className="p-6">
         <div className="flex items-start justify-between gap-3 mb-3">
           <h3 className="font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors text-lg leading-snug">{event.title}</h3>
@@ -111,7 +126,7 @@ export default function EventsListClient() {
             <div className="relative z-10">
               <span className="inline-flex items-center gap-1.5 text-indigo-200 text-sm font-medium mb-4">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Live events from EventEase
+                Live events from EzEvent
               </span>
               <h1 className="text-4xl sm:text-5xl font-extrabold leading-tight mb-4">
                 Discover &amp; Join<br className="hidden sm:block" /> Amazing Events
@@ -188,7 +203,7 @@ export default function EventsListClient() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
               <div key={i} className="bg-white rounded-2xl border border-slate-200 overflow-hidden animate-pulse">
-                <div className="h-3 bg-slate-200" />
+                <div className="h-40 bg-slate-200" />
                 <div className="p-6 space-y-3">
                   <div className="h-5 bg-slate-200 rounded w-3/4" />
                   <div className="h-4 bg-slate-100 rounded w-full" />

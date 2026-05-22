@@ -11,6 +11,9 @@ export default function EventFormClient({ mode = "create", eventId }) {
   const [form, setForm] = useState({
     title: "", description: "", startTime: "", endTime: "", venue: "", capacity: "50",
   });
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [existingImageUrl, setExistingImageUrl] = useState(null);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(mode === "edit");
   const [error, setError] = useState("");
@@ -37,6 +40,7 @@ export default function EventFormClient({ mode = "create", eventId }) {
             venue: data.venue,
             capacity: data.capacity.toString(),
           });
+          setExistingImageUrl(data.imageUrl || data.imageThumbnailUrl || null);
           setFetching(false);
         });
     }
@@ -50,14 +54,29 @@ export default function EventFormClient({ mode = "create", eventId }) {
     const url = mode === "create" ? "/api/events" : `/api/events/${eventId}`;
     const method = mode === "create" ? "POST" : "PUT";
 
-    const res = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...form,
-        capacity: parseInt(form.capacity),
-      }),
-    });
+    let fetchOpts;
+    if (imageFile) {
+      const fd = new FormData();
+      fd.append("title", form.title);
+      fd.append("description", form.description);
+      fd.append("startTime", form.startTime);
+      fd.append("endTime", form.endTime);
+      fd.append("venue", form.venue);
+      fd.append("capacity", String(parseInt(form.capacity, 10)));
+      fd.append("image", imageFile);
+      fetchOpts = { method, body: fd };
+    } else {
+      fetchOpts = {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...form,
+          capacity: parseInt(form.capacity, 10),
+        }),
+      };
+    }
+
+    const res = await fetch(url, fetchOpts);
 
     setLoading(false);
     const data = await res.json();
@@ -160,6 +179,52 @@ export default function EventFormClient({ mode = "create", eventId }) {
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
                 className={inputCls}
                 placeholder="My Awesome Conference 2026"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Event image</label>
+              <p className="text-xs text-slate-400 mb-2">
+                Shown on event cards (optimized) and the event detail page (full size). JPEG, PNG, or WebP, max 5 MB.
+              </p>
+              {(imagePreview || existingImageUrl) && (
+                <div className="relative mb-3 rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={imagePreview || existingImageUrl}
+                    alt="Event preview"
+                    className="w-full h-40 object-cover"
+                  />
+                  {imagePreview && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setImageFile(null);
+                        setImagePreview(null);
+                      }}
+                      className="absolute top-2 right-2 text-xs bg-white/90 text-slate-700 px-2 py-1 rounded-lg border border-slate-200 hover:bg-white"
+                    >
+                      Remove new image
+                    </button>
+                  )}
+                </div>
+              )}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  if (file.size > 5 * 1024 * 1024) {
+                    setError("Image must be 5 MB or smaller.");
+                    e.target.value = "";
+                    return;
+                  }
+                  setImageFile(file);
+                  setImagePreview(URL.createObjectURL(file));
+                  setError("");
+                }}
+                className="block w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
               />
             </div>
 

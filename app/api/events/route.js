@@ -1,5 +1,38 @@
 import { NextResponse } from "next/server";
-import { djangoFetch, getTokenFromRequest, transformEventList } from "@/lib/djangoApi";
+import {
+  djangoFetch,
+  djangoFetchMultipart,
+  getTokenFromRequest,
+  transformEventList,
+} from "@/lib/djangoApi";
+
+function appendEventFields(djangoForm, body) {
+  if (body.title != null) djangoForm.append("title", String(body.title));
+  if (body.description != null) djangoForm.append("description", String(body.description));
+  if (body.venue != null) djangoForm.append("venue", String(body.venue));
+  if (body.capacity != null) djangoForm.append("capacity", String(body.capacity));
+  if (body.startTime != null) djangoForm.append("start_time", String(body.startTime));
+  if (body.endTime != null) djangoForm.append("end_time", String(body.endTime));
+}
+
+async function buildDjangoFormFromRequest(req) {
+  const form = await req.formData();
+  const djangoForm = new FormData();
+  const body = {
+    title: form.get("title"),
+    description: form.get("description"),
+    venue: form.get("venue"),
+    capacity: form.get("capacity"),
+    startTime: form.get("startTime"),
+    endTime: form.get("endTime"),
+  };
+  appendEventFields(djangoForm, body);
+  const image = form.get("image");
+  if (image && typeof image !== "string" && image.size > 0) {
+    djangoForm.append("image", image);
+  }
+  return djangoForm;
+}
 
 export async function GET(req) {
   try {
@@ -34,19 +67,31 @@ export async function GET(req) {
 export async function POST(req) {
   try {
     const token = getTokenFromRequest(req);
-    const body = await req.json();
+    const contentType = req.headers.get("content-type") || "";
+    let res;
+    let data;
 
-    const djangoBody = {
-      title: body.title,
-      description: body.description,
-      start_time: body.startTime,
-      end_time: body.endTime,
-      venue: body.venue,
-      capacity: body.capacity,
-    };
-
-    const res = await djangoFetch("/api/events/", { method: "POST", body: djangoBody, token });
-    const data = await res.json();
+    if (contentType.includes("multipart/form-data")) {
+      const djangoForm = await buildDjangoFormFromRequest(req);
+      res = await djangoFetchMultipart("/api/events/", {
+        method: "POST",
+        formData: djangoForm,
+        token,
+      });
+      data = await res.json();
+    } else {
+      const body = await req.json();
+      const djangoBody = {
+        title: body.title,
+        description: body.description,
+        start_time: body.startTime,
+        end_time: body.endTime,
+        venue: body.venue,
+        capacity: body.capacity,
+      };
+      res = await djangoFetch("/api/events/", { method: "POST", body: djangoBody, token });
+      data = await res.json();
+    }
 
     if (!res.ok) {
       const msg = Object.values(data)?.[0];
@@ -56,13 +101,10 @@ export async function POST(req) {
       );
     }
 
-    // Auto-publish the newly created event so it appears in the organiser's
-    // dashboard immediately. (Django's list endpoint only returns PUBLISHED events,
-    // even for mine=true.) The organiser can unpublish from the dashboard later.
     try {
       await djangoFetch(`/api/events/${data.id}/publish/`, { method: "POST", token });
     } catch {
-      // Non-fatal — event is created, just not yet visible in lists
+      // Non-fatal
     }
 
     return NextResponse.json({ id: data.id, ...data }, { status: 201 });

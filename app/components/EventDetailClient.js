@@ -54,7 +54,18 @@ export default function EventDetailClient({ eventId }) {
       </Link>
 
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden mb-6">
-        <div className="h-2 bg-gradient-to-r from-indigo-500 to-purple-500" />
+        {event.imageUrl ? (
+          <div className="relative w-full aspect-[21/9] sm:aspect-[2.4/1] bg-slate-100">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={event.imageUrl}
+              alt={event.title}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        ) : (
+          <div className="h-2 bg-gradient-to-r from-indigo-500 to-purple-500" />
+        )}
         <div className="p-8">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
             <h1 className="text-3xl font-bold text-slate-900">{event.title}</h1>
