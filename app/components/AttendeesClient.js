@@ -7,7 +7,21 @@ const STATUS_COLORS = {
   CONFIRMED: "bg-green-100 text-green-700",
   PENDING: "bg-amber-100 text-amber-700",
   CANCELLED: "bg-red-100 text-red-700",
+  REFUND_PENDING: "bg-orange-100 text-orange-800",
+  REFUNDED: "bg-slate-100 text-slate-600",
 };
+
+const STATUS_LABELS = {
+  CONFIRMED: "Confirmed",
+  PENDING: "Pending",
+  CANCELLED: "Cancelled",
+  REFUND_PENDING: "Pending Refund",
+  REFUNDED: "Refunded",
+};
+
+function isRegistered(status) {
+  return status === "CONFIRMED" || status === "REFUND_PENDING";
+}
 
 export default function AttendeesClient({ eventId }) {
   const [attendees, setAttendees] = useState([]);
@@ -34,18 +48,30 @@ export default function AttendeesClient({ eventId }) {
   }
 
 
-  async function processRefund() {
-    if (!refundModal || !refundReason.trim()) return;
+  async function processApprove() {
+    if (!refundModal) return;
     setRefunding(true);
-    await fetch(`/api/registrations/${refundModal.id}/refund`, {
+    const res = await fetch(`/api/registrations/${refundModal.id}/refund/approve`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ reason: refundReason }),
     });
     setRefunding(false);
-    setRefundModal(null);
-    setRefundReason("");
-    fetchData();
+    if (res.ok) {
+      setRefundModal(null);
+      fetchData();
+    }
+  }
+
+  async function processReject() {
+    if (!refundModal) return;
+    setRefunding(true);
+    const res = await fetch(`/api/registrations/${refundModal.id}/refund/reject`, {
+      method: "POST",
+    });
+    setRefunding(false);
+    if (res.ok) {
+      setRefundModal(null);
+      fetchData();
+    }
   }
 
   function downloadCsvDirect() {

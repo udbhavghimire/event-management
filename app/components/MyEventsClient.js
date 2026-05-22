@@ -359,7 +359,7 @@ export default function MyEventsClient() {
                   ? "Processing..."
                   : actionModal.type === "cancel"
                     ? "Confirm cancel"
-                    : "Confirm refund"}
+                    : "Submit request"}
               </button>
               <button
                 type="button"
