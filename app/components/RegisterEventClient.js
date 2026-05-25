@@ -134,7 +134,8 @@ export default function RegisterEventClient({ eventId }) {
     );
   }
 
-  if (status === "unauthenticated" || (user && user.role !== "ATTENDEE")) {
+  const userRole = user?.role?.toUpperCase();
+  if (status === "unauthenticated" || (user && userRole !== "ATTENDEE")) {
     return (
       <div className="max-w-xl mx-auto px-4 sm:px-6 py-12">
         <div className="bg-white rounded-2xl border border-slate-200 p-10 text-center">

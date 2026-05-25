@@ -8,7 +8,7 @@ export default function proxy(req) {
   const userInfoRaw = req.cookies.get("user_info")?.value;
   if (userInfoRaw) {
     try {
-      role = JSON.parse(decodeURIComponent(userInfoRaw)).role;
+      role = JSON.parse(decodeURIComponent(userInfoRaw)).role?.toUpperCase();
     } catch {
       role = null;
     }

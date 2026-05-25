@@ -3,8 +3,13 @@ import { djangoFetch, getTokenFromRequest } from "@/lib/djangoApi";
 
 export async function POST(req) {
   const token = getTokenFromRequest(req);
-  if (token) {
-    await djangoFetch("/api/auth/logout/", { method: "POST", token }).catch(() => {});
+  const refresh = req.cookies.get("refresh_token")?.value;
+  if (token || refresh) {
+    await djangoFetch("/api/auth/logout/", {
+      method: "POST",
+      token,
+      body: refresh ? { refresh } : undefined,
+    }).catch(() => {});
   }
 
   const res = NextResponse.json({ ok: true });

@@ -83,7 +83,7 @@ export default function MyEventsClient() {
   }
 
   useEffect(() => {
-    if (authStatus === "authenticated" && user?.role === "ATTENDEE") {
+    if (authStatus === "authenticated" && user?.role?.toUpperCase() === "ATTENDEE") {
       fetchRegistrations();
     } else if (authStatus !== "loading") {
       setLoading(false);
@@ -150,7 +150,7 @@ export default function MyEventsClient() {
     );
   }
 
-  if (user?.role !== "ATTENDEE") {
+  if (user?.role?.toUpperCase() !== "ATTENDEE") {
     return (
       <div className="max-w-md mx-auto px-4 py-16 text-center">
         <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-8">

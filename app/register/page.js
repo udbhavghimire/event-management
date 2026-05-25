@@ -13,7 +13,7 @@ export default function RegisterPage() {
     email: "",
     password: "",
     confirm: "",
-    role: "ORGANIZER",
+    role: "ATTENDEE",
     organisation_name: "",
     contact_phone: "",
   });
@@ -63,8 +63,7 @@ export default function RegisterPage() {
       return;
     }
 
-    // Persist profile hint so future logins on this browser always recover the role.
-    // The Django login endpoint only returns tokens (no user object or /me/ endpoint).
+    // Backup hint for this browser (login also returns role from the API).
     try {
       const hint = {
         email: form.email,

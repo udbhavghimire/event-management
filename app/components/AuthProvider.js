@@ -47,9 +47,41 @@ export default function AuthProvider({ children }) {
   const [status, setStatus] = useState("loading");
 
   useEffect(() => {
-    const u = readUserCookie();
-    setUser(u);
-    setStatus(u ? "authenticated" : "unauthenticated");
+    let cancelled = false;
+
+    async function loadSession() {
+      const cached = readUserCookie();
+      if (cached?.role) {
+        if (!cancelled) {
+          setUser({ ...cached, role: cached.role.toUpperCase() });
+          setStatus("authenticated");
+        }
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/auth/me");
+        if (res.ok) {
+          const data = await res.json();
+          if (!cancelled && data.user) {
+            setUser(data.user);
+            setStatus("authenticated");
+            writeProfileHint(data.user);
+            return;
+          }
+        }
+      } catch { /* ignore */ }
+
+      if (!cancelled) {
+        setUser(cached);
+        setStatus(cached ? "authenticated" : "unauthenticated");
+      }
+    }
+
+    loadSession();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   async function login(email, password) {
@@ -61,20 +93,16 @@ export default function AuthProvider({ children }) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Login failed");
 
-    // Start with what the API returned (Django login returns tokens only, no role)
     let u = data.user || { email };
 
-    // Role recovery: the backend has no /me/ endpoint, so we use locally-stored hints.
-    // Priority: profile_hint cookie (survives logout) → localStorage (written at registration)
+    // Fallback for older sessions before backend returned role on login
     if (!u.role) {
-      // 1. Persistent cookie hint — written after every successful login, survives logout
       const cookieHint = readCookie("profile_hint");
       if (cookieHint?.email === email && cookieHint?.role) {
         u = { ...cookieHint, ...u, role: cookieHint.role };
       }
     }
     if (!u.role) {
-      // 2. localStorage fallback — written at registration time
       try {
         const stored = localStorage.getItem(`profile:${email}`);
         if (stored) {
@@ -86,15 +114,13 @@ export default function AuthProvider({ children }) {
       } catch { /* ignore */ }
     }
 
-    // Patch the session cookie so the role survives page refreshes within this session
     if (u.role) {
+      u = { ...u, role: u.role.toUpperCase() };
       try {
         document.cookie = `user_info=${encodeURIComponent(JSON.stringify(u))}; path=/; max-age=${7 * 24 * 60 * 60}; samesite=lax`;
       } catch { /* ignore */ }
+      writeProfileHint(u);
     }
-
-    // Always refresh the persistent hint so future logins on this browser also work
-    writeProfileHint(u);
 
     setUser(u);
     setStatus("authenticated");
