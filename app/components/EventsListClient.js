@@ -82,30 +82,41 @@ export default function EventsListClient() {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("asc");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [query, setQuery] = useState("");
 
   const fetchEvents = useCallback(async () => {
     setLoading(true);
-    const params = new URLSearchParams({ sort });
-    if (query) params.set("search", query);
-    const res = await fetch(`/api/events?${params}`);
-    let data = await res.json();
-    if (!Array.isArray(data)) data = [];
+    setError(null);
 
-    if (sort === "desc") {
-      data = [...data].sort((a, b) => {
-        const aTime = new Date(a.createdAt || a.startTime).getTime();
-        const bTime = new Date(b.createdAt || b.startTime).getTime();
-        return bTime - aTime;
-      });
-    } else {
-      data = [...data].sort((a, b) =>
-        new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
-      );
+    try {
+      const params = new URLSearchParams({ sort });
+      if (query) params.set("search", query);
+
+      const res = await fetch(`/api/events?${params}`);
+      if (!res.ok) throw new Error(`Server responded with ${res.status}`);
+
+      let data = await res.json();
+      if (!Array.isArray(data)) data = [];
+
+      if (sort === "desc") {
+        data = [...data].sort((a, b) => {
+          const aTime = new Date(a.createdAt || a.startTime).getTime();
+          const bTime = new Date(b.createdAt || b.startTime).getTime();
+          return bTime - aTime;
+        });
+      } else {
+        data = [...data].sort((a, b) =>
+          new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+        );
+      }
+
+      setEvents(data);
+    } catch (err) {
+      setError("Unable to load events. The server may be slow — please try again.");
+    } finally {
+      setLoading(false);
     }
-
-    setEvents(data);
-    setLoading(false);
   }, [sort, query]);
 
   useEffect(() => { fetchEvents(); }, [fetchEvents]);
@@ -173,7 +184,7 @@ export default function EventsListClient() {
             <h2 className="text-xl font-bold text-slate-900">
               {query ? `Results for "${query}"` : "Upcoming Events"}
             </h2>
-            {!loading && (
+            {!loading && !error && (
               <span className="text-xs px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-700 font-semibold">
                 {events.length}
               </span>
@@ -201,6 +212,11 @@ export default function EventsListClient() {
         </div>
 
         {loading ? (
+          // Skeleton loader
+          <>
+          <p className="text-sm text-slate-500 text-center mb-6 animate-pulse">
+            Loading events, please wait…
+          </p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
               <div key={i} className="bg-white rounded-2xl border border-slate-200 overflow-hidden animate-pulse">
@@ -214,7 +230,31 @@ export default function EventsListClient() {
               </div>
             ))}
           </div>
+          </>
+
+        ) : error ? (
+          // Error state
+          <div className="text-center py-24">
+            <div className="w-20 h-20 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <svg className="w-10 h-10 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+              </svg>
+            </div>
+            <p className="text-lg font-semibold text-slate-700 mb-1">Something went wrong</p>
+            <p className="text-sm text-slate-400 mb-6">{error}</p>
+            <button
+              onClick={fetchEvents}
+              className="inline-flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-indigo-700 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Try again
+            </button>
+          </div>
+
         ) : events.length === 0 ? (
+          // Empty state
           <div className="text-center py-24">
             <div className="w-20 h-20 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <svg className="w-10 h-10 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -226,7 +266,9 @@ export default function EventsListClient() {
               {query ? "Try a different search term." : "No upcoming events yet — check back soon."}
             </p>
           </div>
+
         ) : (
+          // Events grid
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {events.map((event) => (
               <EventCard key={event.id} event={event} />
